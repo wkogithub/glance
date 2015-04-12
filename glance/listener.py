@@ -54,6 +54,17 @@ class NotificationEndpoint(object):
                 payload,
                 metadata)
 
+    def topics_and_exchanges(self):
+        topics_exchanges = set()
+        for plugin in self.plugins:
+            # TODO - make this mandatory
+            if getattr(plugin.plugin, 'get_notification_topic_exchange', None):
+                topic_exchange = plugin.plugin.get_notification_topic_exchange()
+            else:
+                topic_exchange = ('notifications', 'glance')
+            topics_exchanges.add(topic_exchange)
+        return topics_exchanges
+
 
 class ListenerService(os_service.Service):
     def __init__(self, *args, **kwargs):
@@ -63,11 +74,16 @@ class ListenerService(os_service.Service):
     def start(self):
         super(ListenerService, self).start()
         transport = messaging.get_transport(cfg.CONF)
+
+        notification_endpoint = NotificationEndpoint()
+
+        # Get a list of exchanges and topics to listen for
         targets = [
-            messaging.Target(topic="notifications", exchange="glance")
+            messaging.Target(topic=topic, exchange=exchange)
+            for topic, exchange in notification_endpoint.topics_and_exchanges()
         ]
         endpoints = [
-            NotificationEndpoint()
+            notification_endpoint
         ]
         listener = messaging.get_notification_listener(
             transport,
