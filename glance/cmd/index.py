@@ -29,6 +29,12 @@ _LE = i18n._LE
 
 
 def main():
+    CONF.register_cli_opts([
+        cfg.Opt('os-username'),
+        cfg.Opt('os-password'),
+        cfg.Opt('os-auth-url'),
+        cfg.Opt('os-tenant-name'),
+        ])
     try:
         logging.register_options(CONF)
         cfg_files = cfg.find_config_files(project='glance',
@@ -50,3 +56,7 @@ def main():
                                                    'e': e})
     except RuntimeError as e:
         sys.exit("ERROR: %s" % e)
+
+
+if __name__ == "__main__":
+    main()
