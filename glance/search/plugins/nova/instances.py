@@ -142,4 +142,4 @@ class InstanceIndex(base.IndexBase):
 
     def get_notification_supported_events(self):
         # TODO: DRY
-        return ['compute.instance.update']
+        return ['compute.instance.update', 'compute.instance.delete.end']

@@ -39,6 +39,7 @@ class InstanceHandler(base.NotificationBase):
                 # compute.instance.update seems to be the event set as a
                 # result of a state change etc
                 "compute.instance.update": self.create,
+                "compute.instance.delete.end": self.delete,
             }
             actions[event_type](payload)
             return oslo_messaging.NotificationResult.HANDLED
@@ -47,11 +48,27 @@ class InstanceHandler(base.NotificationBase):
 
     def create(self, payload):
         id = payload['instance_id']
+        LOG.debug("Updating nova instance information for %s", id)
+
         payload = self.format_server(payload)
-        self.engine.index(
+        body = {
+            "doc": payload,
+            "doc_as_upsert": True,
+        },
+        self.engine.update(
             index=self.index_name,
             doc_type=self.document_type,
-            body=payload,
+            body=body,
+            id=id
+        )
+
+    def delete(self, payload):
+        id = payload['instance_id']
+        LOG.debug("Deleting nova instance information for %s", id)
+
+        self.engine.delete(
+            index=self.index_name,
+            doc_type=self.document_type,
             id=id
         )
 
@@ -61,7 +78,6 @@ class InstanceHandler(base.NotificationBase):
         # what we can get from a single nova call, though missing some stuff,
         # notably networking info
         # https://wiki.openstack.org/wiki/SystemUsageData#compute.instance.update:
-        print payload
         return dict(
             id=payload['instance_id'],
             instance_id=payload['instance_id'],
