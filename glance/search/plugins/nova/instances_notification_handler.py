@@ -48,11 +48,10 @@ class InstanceHandler(base.NotificationBase):
     def create(self, payload):
         id = payload['instance_id']
         payload = self.format_server(payload)
-        doc = {"doc": payload}
         self.engine.index(
             index=self.index_name,
             doc_type=self.document_type,
-            body=doc,
+            body=payload,
             id=id
         )
 
@@ -70,7 +69,7 @@ class InstanceHandler(base.NotificationBase):
             status=payload['state'],
             owner=payload['tenant_id'],
             updated=datetime.datetime.utcnow(), # TODO: Not this.
-            created=payload['created_at'],
+            created=payload['created_at'].replace(" ", "T"),
             # networks=server.networks,  # TODO: Figure this out
             availability_zone=payload.get('availability_zone', None),
             image=dict(
